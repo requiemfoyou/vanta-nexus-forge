@@ -25,12 +25,12 @@
     textarea{min-height:76px;resize:vertical}label{font-size:12px;color:var(--muted)}.primary{background:var(--accent);color:#071426;border:0;border-radius:10px;padding:10px 14px;font-weight:750}
     .secondary{background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:10px;padding:9px 12px}
     .item{padding:12px 0;border-bottom:1px solid var(--line)}.item:last-child{border:0}.item strong{display:block;margin-bottom:4px}.item p{margin:0;color:var(--muted);font-size:13px;white-space:pre-wrap}.item-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:9px}.tiny{font-size:12px;padding:6px 9px}.task-meta{display:flex;gap:7px;flex-wrap:wrap;margin:7px 0}.tag{font-size:11px;border:1px solid var(--line);border-radius:99px;padding:4px 8px;color:var(--accent2)}.done strong{text-decoration:line-through;opacity:.65}.form-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}.form-row>div{min-width:0}select{width:100%;background:#0b1525;border:1px solid var(--line);border-radius:10px;padding:11px;color:var(--text);font:inherit;margin:5px 0 10px}
-    .empty{color:var(--muted);font-size:13px;padding:12px 0}.hidden{display:none!important}.search{margin:14px 0}.foot{margin-top:22px;color:var(--muted);font-size:11px;text-align:center}
+    .empty{color:var(--muted);font-size:13px;padding:12px 0}.progress{height:8px;background:#0b1525;border:1px solid var(--line);border-radius:99px;overflow:hidden;margin:8px 0}.progress>span{display:block;height:100%;background:var(--accent);border-radius:99px}.project-kpis{display:flex;gap:7px;flex-wrap:wrap;margin:8px 0}.project-kpis .tag{font-size:10px}.milestones{color:var(--muted);font-size:12px;white-space:pre-wrap;margin-top:7px}.hidden{display:none!important}.search{margin:14px 0}.foot{margin-top:22px;color:var(--muted);font-size:11px;text-align:center}
     @media(max-width:650px){.stats{grid-template-columns:repeat(2,1fr)}.grid{grid-template-columns:1fr}.wrap{padding:16px 12px 36px}.hero{padding:18px}}
   </style>
 </head>
 <body><main class="wrap">
-  <header class="top"><div><div class="brand">VANTA NEXUS FORGE</div><div class="sub">PERSONAL COMMAND CENTER</div></div><span class="pill">ANDROID PWA · 0.1</span></header>
+  <header class="top"><div><div class="brand">VANTA NEXUS FORGE</div><div class="sub">PERSONAL COMMAND CENTER</div></div><span class="pill">ANDROID PWA · 0.3</span></header>
   <section class="hero"><div class="sub">SYSTEM OVERVIEW</div><h1>Создавай. Систематизируй. Развивай.</h1><p>Локальное пространство для проектов и идей. Данные сохраняются в браузере на этом устройстве.</p></section>
   <section class="stats">
     <div class="stat"><b id="projectCount">0</b><span>Проекты</span></div><div class="stat"><b id="ideaCount">0</b><span>Идеи</span></div>
@@ -44,8 +44,17 @@
     <div class="panel"><div class="panel-head"><h2>Ближайшие задачи</h2><button class="secondary" data-go="tasks">Все</button></div><div id="dashTasks"></div></div>
   </section>
   <section id="projects" class="grid hidden">
-    <div class="panel"><h2>Новый проект</h2><form id="projectForm"><label>Название</label><input name="name" required maxlength="90" placeholder="Например, SaaS-платформа"><label>Описание</label><textarea name="description" placeholder="Цель, ценность, следующий шаг"></textarea><label>Статус</label><input name="status" value="Активный"><button class="primary">Добавить проект</button></form></div>
-    <div class="panel"><h2>Список проектов</h2><div id="projectList"></div></div>
+    <div class="panel"><div class="panel-head"><h2 id="projectFormTitle">Новый проект</h2><button class="secondary tiny hidden" id="cancelProjectEdit" type="button">Отмена</button></div>
+      <form id="projectForm">
+        <label>Название</label><input name="name" required maxlength="90" placeholder="Например, SaaS-платформа">
+        <label>Описание и цель</label><textarea name="description" placeholder="Ценность, результат, следующий шаг"></textarea>
+        <div class="form-row"><div><label>Статус</label><select name="status"><option>Активный</option><option>Планирование</option><option>На паузе</option><option>Завершён</option><option>Архив</option></select></div><div><label>Дедлайн</label><input name="dueDate" type="date"></div></div>
+        <div class="form-row"><div><label>Бюджет (число)</label><input name="budget" type="number" min="0" step="0.01" placeholder="0"></div><div><label>Валюта</label><select name="currency"><option>EUR</option><option>USD</option><option>RUB</option><option>GBP</option></select></div></div>
+        <label>Контрольные точки (каждая с новой строки)</label><textarea name="milestones" placeholder="Например:&#10;Исследование рынка&#10;Прототип&#10;Первый запуск"></textarea>
+        <button class="primary" id="projectSubmit">Добавить проект</button>
+      </form>
+    </div>
+    <div class="panel"><div class="panel-head"><h2>Портфель проектов</h2><select id="projectFilter" style="max-width:145px"><option value="all">Все проекты</option><option value="active">Активные</option><option value="archived">Архив</option></select></div><div id="projectList"></div></div>
   </section>
   <section id="ideas" class="grid hidden">
     <div class="panel"><h2>Новая идея</h2><form id="ideaForm"><label>Название</label><input name="title" required maxlength="90" placeholder="Краткое название"><label>Проблема / возможность</label><textarea name="problem" placeholder="Что можно улучшить или решить?"></textarea><label>Аудитория</label><input name="audience" placeholder="Для кого?"><button class="primary">Сохранить идею</button></form></div>
@@ -68,7 +77,7 @@
       <div id="taskList"></div>
     </div>
   </section>
-  <div class="foot">VANTA NEXUS FORGE · MVP 0.2 · TASK COMMAND · данные хранятся локально в браузере</div>
+  <div class="foot">VANTA NEXUS FORGE · MVP 0.3 · PROJECT CONTROL · данные хранятся локально в браузере</div>
 </main>
 <script>
 const DB='vanta-nexus-forge', STORE_P='projects', STORE_I='ideas', STORE_T='tasks';
@@ -83,7 +92,7 @@ function card(title,desc,meta){return `<div class="item"><strong>${safe(title)}<
 function localToday(){const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`}
 function priorityRank(p){return ({'Критический':0,'Высокий':1,'Средний':2,'Низкий':3})[p]??4}
 async function render(){
- const [ps,is,ts]=await Promise.all([all(STORE_P),all(STORE_I),all(STORE_T)]);
+ const [ps,is,ts]=await Promise.all([all(STORE_P),all(STORE_I),all(STORE_T)]); window.__projectTasks=ts;
  const q=document.querySelector('#search').value.toLowerCase();
  const fp=ps.filter(x=>(x.name+' '+x.description+' '+x.status).toLowerCase().includes(q));
  const fi=is.filter(x=>(x.title+' '+x.problem+' '+x.audience).toLowerCase().includes(q));
@@ -95,7 +104,12 @@ async function render(){
  fill('#dashProjects',ps.slice(0,4));fill('#dashIdeas',is.slice(0,4));
  const open=ts.filter(t=>t.status!=='Выполнена').sort((a,b)=>(a.dueDate||'9999').localeCompare(b.dueDate||'9999'));
  document.querySelector('#dashTasks').innerHTML=open.length?open.slice(0,4).map(t=>card(t.title,t.description,(t.priority||'Средний')+' · '+(t.dueDate||t.status))).join(''):'<div class="empty">Нет открытых задач.</div>';
- fill('#projectList',fp);fill('#ideaList',fi);
+ const pf=document.querySelector('#projectFilter').value;
+ let shownProjects=fp.slice();
+ if(pf==='active')shownProjects=shownProjects.filter(p=>p.status!=='Архив'&&p.status!=='Завершён');
+ if(pf==='archived')shownProjects=shownProjects.filter(p=>p.status==='Архив'||p.status==='Завершён');
+ document.querySelector('#projectList').innerHTML=shownProjects.length?shownProjects.map(projectCard).join(''):'<div class="empty">Проектов в этой категории нет.</div>';
+ fill('#ideaList',fi);
  const projectSelect=document.querySelector('#taskProject'), selected=projectSelect.value;
  projectSelect.innerHTML='<option value="">Без проекта</option>'+ps.map(p=>`<option value="${p.id}">${safe(p.name)}</option>`).join('');
  projectSelect.value=selected;
@@ -112,6 +126,18 @@ async function render(){
  if(sort==='new')shown.sort((a,b)=>(b.created||0)-(a.created||0));
  document.querySelector('#taskList').innerHTML=shown.length?shown.map(taskCard).join(''):'<div class="empty">Задач по этому фильтру нет.</div>';
 }
+function projectCard(p){
+ const related=window.__projectTasks?.filter(t=>t.projectId===p.id)||[];
+ const done=related.filter(t=>t.status==='Выполнена').length;
+ const pct=related.length?Math.round(done/related.length*100):0;
+ const budget=Number(p.budget||0);
+ const milestones=(p.milestones||'').split('\n').map(x=>x.trim()).filter(Boolean);
+ return `<div class="item"><strong>${safe(p.name)}</strong><p>${safe(p.description||'Без описания')}</p>
+ <div class="project-kpis"><span class="tag">${safe(p.status||'Активный')}</span>${p.dueDate?`<span class="tag">Дедлайн: ${safe(p.dueDate)}</span>`:''}<span class="tag">${related.length} задач · ${done} выполнено</span>${budget?`<span class="tag">Бюджет: ${safe(budget)} ${safe(p.currency||'EUR')}</span>`:''}</div>
+ <div class="progress"><span style="width:${pct}%"></span></div><p>${pct}% прогресс по связанным задачам</p>
+ ${milestones.length?`<div class="milestones"><b>Контрольные точки:</b>\n${milestones.map((m,i)=>`${i+1}. ${safe(m)}`).join('\n')}</div>`:''}
+ <div class="item-actions"><button class="secondary tiny" data-project-edit="${p.id}">Изменить</button><button class="secondary tiny" data-project-archive="${p.id}">${p.status==='Архив'?'Вернуть из архива':'В архив'}</button></div></div>`;
+}
 function taskCard(t){
  const overdue=t.dueDate&&t.dueDate<localToday()&&t.status!=='Выполнена';
  return `<div class="item ${t.status==='Выполнена'?'done':''}"><strong>${safe(t.title)}</strong><p>${safe(t.description||'Без описания')}</p><div class="task-meta"><span class="tag">${safe(t.priority||'Средний')}</span><span class="tag">${safe(t.status||'К выполнению')}</span>${t.dueDate?`<span class="tag">${overdue?'Просрочена · ':''}${safe(t.dueDate)}</span>`:''}${t.projectName?`<span class="tag">${safe(t.projectName)}</span>`:''}</div><div class="item-actions"><button class="secondary tiny" data-edit="${t.id}">Изменить</button><button class="secondary tiny" data-toggle="${t.id}">${t.status==='Выполнена'?'Вернуть':'Выполнить'}</button><button class="secondary tiny" data-delete="${t.id}">Удалить</button></div></div>`;
@@ -119,7 +145,26 @@ function taskCard(t){
 document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>show(b.dataset.tab));document.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>show(b.dataset.go));
 function show(tab){document.querySelectorAll('main>section[id]').forEach(s=>s.classList.toggle('hidden',s.id!==tab));document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab))}
 document.querySelector('#search').addEventListener('input',render);
-document.querySelector('#projectForm').onsubmit=async e=>{e.preventDefault();const f=new FormData(e.target);await add(STORE_P,{name:f.get('name').trim(),description:f.get('description').trim(),status:f.get('status').trim()});e.target.reset();e.target.status.value='Активный';await render()};
+let editingProjectId=null;
+function resetProjectForm(){editingProjectId=null;const f=document.querySelector('#projectForm');f.reset();f.elements.status.value='Активный';f.elements.currency.value='EUR';document.querySelector('#projectFormTitle').textContent='Новый проект';document.querySelector('#projectSubmit').textContent='Добавить проект';document.querySelector('#cancelProjectEdit').classList.add('hidden')}
+document.querySelector('#projectForm').onsubmit=async e=>{
+ e.preventDefault();const f=new FormData(e.target);
+ const item={name:f.get('name').trim(),description:f.get('description').trim(),status:f.get('status'),dueDate:f.get('dueDate'),budget:f.get('budget'),currency:f.get('currency'),milestones:f.get('milestones')};
+ if(editingProjectId!==null){
+   const old=(await all(STORE_P)).find(p=>p.id===editingProjectId);
+   await update(STORE_P,{...old,...item,id:editingProjectId});
+   const tasks=await all(STORE_T);
+   for(const t of tasks.filter(t=>t.projectId===editingProjectId)){t.projectName=item.name;await update(STORE_T,t)}
+ }else await add(STORE_P,item);
+ resetProjectForm();await render();
+};
+document.querySelector('#cancelProjectEdit').onclick=resetProjectForm;
+document.querySelector('#projectFilter').onchange=render;
+document.querySelector('#projectList').addEventListener('click',async e=>{
+ const edit=e.target.closest('[data-project-edit]'),archive=e.target.closest('[data-project-archive]');
+ if(edit){const id=Number(edit.dataset.projectEdit),p=(await all(STORE_P)).find(x=>x.id===id);if(!p)return;editingProjectId=id;const f=document.querySelector('#projectForm');for(const k of ['name','description','status','dueDate','budget','currency','milestones'])f.elements[k].value=p[k]??(k==='currency'?'EUR':'');document.querySelector('#projectFormTitle').textContent='Редактирование проекта';document.querySelector('#projectSubmit').textContent='Сохранить изменения';document.querySelector('#cancelProjectEdit').classList.remove('hidden');window.scrollTo({top:0,behavior:'smooth'})}
+ if(archive){const id=Number(archive.dataset.projectArchive),p=(await all(STORE_P)).find(x=>x.id===id);if(p){p.status=p.status==='Архив'?'Активный':'Архив';await update(STORE_P,p);await render()}}
+});
 document.querySelector('#ideaForm').onsubmit=async e=>{e.preventDefault();const f=new FormData(e.target);await add(STORE_I,{title:f.get('title').trim(),problem:f.get('problem').trim(),audience:f.get('audience').trim()});e.target.reset();await render()};
 document.querySelector('#taskForm').onsubmit=async e=>{
  e.preventDefault();const f=new FormData(e.target), projectId=f.get('projectId'), projects=await all(STORE_P), project=projects.find(p=>String(p.id)===String(projectId));
