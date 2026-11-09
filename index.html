@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#101827">
+  <meta name="description" content="VANTA NEXUS FORGE — персональный командный центр">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <title>VANTA NEXUS FORGE</title>
+  <style>
+    :root{color-scheme:dark;--bg:#0b1220;--panel:#111c2e;--panel2:#17243a;--line:#263751;--text:#e8f0fb;--muted:#91a3bd;--accent:#65a8ff;--accent2:#a8d0ff;--danger:#ff7885}
+    *{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at top right,#172b49 0,transparent 42%),var(--bg);color:var(--text);font:15px system-ui,-apple-system,Segoe UI,sans-serif}
+    .wrap{max-width:980px;margin:auto;padding:22px 16px 48px}.top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:22px}
+    .brand{font-weight:850;letter-spacing:.12em;font-size:17px}.sub{color:var(--muted);font-size:12px;letter-spacing:.08em;margin-top:4px}
+    .pill{border:1px solid var(--line);border-radius:99px;padding:7px 10px;color:var(--accent2);font-size:11px;white-space:nowrap}
+    h1{font-size:clamp(25px,6vw,38px);line-height:1.08;margin:16px 0 8px}h2{font-size:17px;margin:0 0 14px}.muted{color:var(--muted)}
+    .hero{padding:23px;border:1px solid var(--line);border-radius:20px;background:linear-gradient(135deg,#14243b,#101a2b 70%);box-shadow:0 18px 50px #0003}
+    .hero p{max-width:620px;color:var(--muted);line-height:1.55;margin:0}.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:16px 0}
+    .stat,.panel{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:15px}.stat b{display:block;font-size:25px;color:var(--accent2)}.stat span{font-size:12px;color:var(--muted)}
+    .nav{display:flex;gap:8px;overflow:auto;margin:18px 0}.nav button{white-space:nowrap;background:var(--panel);border:1px solid var(--line);color:var(--muted);padding:10px 14px;border-radius:11px}
+    button,.primary{cursor:pointer;font:inherit}.nav button.active{background:#1a3555;border-color:var(--accent);color:var(--text)}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.panel{min-width:0}.panel-head{display:flex;justify-content:space-between;align-items:center;gap:10px}
+    input,textarea{width:100%;background:#0b1525;border:1px solid var(--line);border-radius:10px;padding:11px;color:var(--text);font:inherit;margin:5px 0 10px}
+    textarea{min-height:76px;resize:vertical}label{font-size:12px;color:var(--muted)}.primary{background:var(--accent);color:#071426;border:0;border-radius:10px;padding:10px 14px;font-weight:750}
+    .secondary{background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:10px;padding:9px 12px}
+    .item{padding:12px 0;border-bottom:1px solid var(--line)}.item:last-child{border:0}.item strong{display:block;margin-bottom:4px}.item p{margin:0;color:var(--muted);font-size:13px;white-space:pre-wrap}
+    .empty{color:var(--muted);font-size:13px;padding:12px 0}.hidden{display:none!important}.search{margin:14px 0}.foot{margin-top:22px;color:var(--muted);font-size:11px;text-align:center}
+    @media(max-width:650px){.stats{grid-template-columns:repeat(2,1fr)}.grid{grid-template-columns:1fr}.wrap{padding:16px 12px 36px}.hero{padding:18px}}
+  </style>
+</head>
+<body><main class="wrap">
+  <header class="top"><div><div class="brand">VANTA NEXUS FORGE</div><div class="sub">PERSONAL COMMAND CENTER</div></div><span class="pill">ANDROID PWA · 0.1</span></header>
+  <section class="hero"><div class="sub">SYSTEM OVERVIEW</div><h1>Создавай. Систематизируй. Развивай.</h1><p>Локальное пространство для проектов и идей. Данные сохраняются в браузере на этом устройстве.</p></section>
+  <section class="stats">
+    <div class="stat"><b id="projectCount">0</b><span>Проекты</span></div><div class="stat"><b id="ideaCount">0</b><span>Идеи</span></div>
+    <div class="stat"><b id="activeCount">0</b><span>Активные проекты</span></div><div class="stat"><b>LOCAL</b><span>Режим хранения</span></div>
+  </section>
+  <nav class="nav"><button class="active" data-tab="dashboard">Обзор</button><button data-tab="projects">Проекты</button><button data-tab="ideas">Идеи</button></nav>
+  <input class="search" id="search" placeholder="Поиск по проектам и идеям…">
+  <section id="dashboard" class="grid">
+    <div class="panel"><div class="panel-head"><h2>Последние проекты</h2><button class="secondary" data-go="projects">Все</button></div><div id="dashProjects"></div></div>
+    <div class="panel"><div class="panel-head"><h2>Последние идеи</h2><button class="secondary" data-go="ideas">Все</button></div><div id="dashIdeas"></div></div>
+  </section>
+  <section id="projects" class="grid hidden">
+    <div class="panel"><h2>Новый проект</h2><form id="projectForm"><label>Название</label><input name="name" required maxlength="90" placeholder="Например, SaaS-платформа"><label>Описание</label><textarea name="description" placeholder="Цель, ценность, следующий шаг"></textarea><label>Статус</label><input name="status" value="Активный"><button class="primary">Добавить проект</button></form></div>
+    <div class="panel"><h2>Список проектов</h2><div id="projectList"></div></div>
+  </section>
+  <section id="ideas" class="grid hidden">
+    <div class="panel"><h2>Новая идея</h2><form id="ideaForm"><label>Название</label><input name="title" required maxlength="90" placeholder="Краткое название"><label>Проблема / возможность</label><textarea name="problem" placeholder="Что можно улучшить или решить?"></textarea><label>Аудитория</label><input name="audience" placeholder="Для кого?"><button class="primary">Сохранить идею</button></form></div>
+    <div class="panel"><h2>Банк идей</h2><div id="ideaList"></div></div>
+  </section>
+  <div class="foot">VANTA NEXUS FORGE · MVP 0.1 · данные хранятся локально в браузере</div>
+</main>
+<script>
+const DB='vanta-nexus-forge', STORE_P='projects', STORE_I='ideas';
+let db;
+function openDB(){return new Promise((resolve,reject)=>{const r=indexedDB.open(DB,1);r.onupgradeneeded=()=>{const d=r.result;if(!d.objectStoreNames.contains(STORE_P))d.createObjectStore(STORE_P,{keyPath:'id',autoIncrement:true});if(!d.objectStoreNames.contains(STORE_I))d.createObjectStore(STORE_I,{keyPath:'id',autoIncrement:true})};r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error)})}
+function all(store){return new Promise((res,rej)=>{const r=db.transaction(store).objectStore(store).getAll();r.onsuccess=()=>res(r.result.sort((a,b)=>b.created-a.created));r.onerror=()=>rej(r.error)})}
+function add(store,item){return new Promise((res,rej)=>{const r=db.transaction(store,'readwrite').objectStore(store).add({...item,created:Date.now()});r.onsuccess=res;r.onerror=()=>rej(r.error)})}
+function safe(s=''){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function card(title,desc,meta){return `<div class="item"><strong>${safe(title)}</strong><p>${safe(desc||'Без описания')}${meta?' · '+safe(meta):''}</p></div>`}
+async function render(){const [ps,is]=await Promise.all([all(STORE_P),all(STORE_I)]);const q=document.querySelector('#search').value.toLowerCase();const fp=ps.filter(x=>(x.name+' '+x.description+' '+x.status).toLowerCase().includes(q));const fi=is.filter(x=>(x.title+' '+x.problem+' '+x.audience).toLowerCase().includes(q));
+ document.querySelector('#projectCount').textContent=ps.length;document.querySelector('#ideaCount').textContent=is.length;document.querySelector('#activeCount').textContent=ps.filter(x=>(x.status||'').toLowerCase().includes('актив')).length;
+ const fill=(id,arr)=>document.querySelector(id).innerHTML=arr.length?arr.map(x=>card(x.name||x.title,x.description||x.problem,x.status||x.audience)).join(''):'<div class="empty">Пока ничего нет.</div>';
+ fill('#dashProjects',ps.slice(0,4));fill('#dashIdeas',is.slice(0,4));fill('#projectList',fp);fill('#ideaList',fi);
+}
+document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>show(b.dataset.tab));document.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>show(b.dataset.go));
+function show(tab){document.querySelectorAll('main>section[id]').forEach(s=>s.classList.toggle('hidden',s.id!==tab));document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab))}
+document.querySelector('#search').addEventListener('input',render);
+document.querySelector('#projectForm').onsubmit=async e=>{e.preventDefault();const f=new FormData(e.target);await add(STORE_P,{name:f.get('name').trim(),description:f.get('description').trim(),status:f.get('status').trim()});e.target.reset();e.target.status.value='Активный';await render()};
+document.querySelector('#ideaForm').onsubmit=async e=>{e.preventDefault();const f=new FormData(e.target);await add(STORE_I,{title:f.get('title').trim(),problem:f.get('problem').trim(),audience:f.get('audience').trim()});e.target.reset();await render()};
+(async()=>{try{db=await openDB();await render();if('serviceWorker'in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('./sw.js')}catch(e){alert('Не удалось открыть локальную базу данных. Проверьте поддержку IndexedDB в браузере.')}})();
+</script></body></html>
