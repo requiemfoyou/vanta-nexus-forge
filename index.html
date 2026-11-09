@@ -30,18 +30,19 @@
   </style>
 </head>
 <body><main class="wrap">
-  <header class="top"><div><div class="brand">VANTA NEXUS FORGE</div><div class="sub">PERSONAL COMMAND CENTER</div></div><span class="pill">ANDROID PWA · 0.3</span></header>
+  <header class="top"><div><div class="brand">VANTA NEXUS FORGE</div><div class="sub">PERSONAL COMMAND CENTER</div></div><span class="pill">ANDROID PWA · 0.4</span></header>
   <section class="hero"><div class="sub">SYSTEM OVERVIEW</div><h1>Создавай. Систематизируй. Развивай.</h1><p>Локальное пространство для проектов и идей. Данные сохраняются в браузере на этом устройстве.</p></section>
   <section class="stats">
     <div class="stat"><b id="projectCount">0</b><span>Проекты</span></div><div class="stat"><b id="ideaCount">0</b><span>Идеи</span></div>
     <div class="stat"><b id="activeCount">0</b><span>Активные проекты</span></div><div class="stat"><b id="taskCount">0</b><span>Открытые задачи</span></div><div class="stat"><b>LOCAL</b><span>Режим хранения</span></div>
   </section>
-  <nav class="nav"><button class="active" data-tab="dashboard">Обзор</button><button data-tab="projects">Проекты</button><button data-tab="ideas">Идеи</button><button data-tab="tasks">Задачи</button></nav>
+  <nav class="nav"><button class="active" data-tab="dashboard">Обзор</button><button data-tab="projects">Проекты</button><button data-tab="ideas">Идеи</button><button data-tab="tasks">Задачи</button><button data-tab="finance">Финансы</button></nav>
   <input class="search" id="search" placeholder="Поиск по проектам и идеям…">
   <section id="dashboard" class="grid">
     <div class="panel"><div class="panel-head"><h2>Последние проекты</h2><button class="secondary" data-go="projects">Все</button></div><div id="dashProjects"></div></div>
     <div class="panel"><div class="panel-head"><h2>Последние идеи</h2><button class="secondary" data-go="ideas">Все</button></div><div id="dashIdeas"></div></div>
     <div class="panel"><div class="panel-head"><h2>Ближайшие задачи</h2><button class="secondary" data-go="tasks">Все</button></div><div id="dashTasks"></div></div>
+    <div class="panel"><div class="panel-head"><h2>Финансовая сводка</h2><button class="secondary" data-go="finance">Открыть</button></div><div id="dashFinance"></div></div>
   </section>
   <section id="projects" class="grid hidden">
     <div class="panel"><div class="panel-head"><h2 id="projectFormTitle">Новый проект</h2><button class="secondary tiny hidden" id="cancelProjectEdit" type="button">Отмена</button></div>
@@ -77,12 +78,27 @@
       <div id="taskList"></div>
     </div>
   </section>
-  <div class="foot">VANTA NEXUS FORGE · MVP 0.3 · PROJECT CONTROL · данные хранятся локально в браузере</div>
+  <section id="finance" class="grid hidden">
+    <div class="panel"><div class="panel-head"><h2 id="financeFormTitle">Новая операция</h2><button class="secondary tiny hidden" id="cancelFinanceEdit" type="button">Отмена</button></div>
+      <form id="financeForm">
+        <div class="form-row"><div><label>Тип операции</label><select name="type"><option value="expense">Расход</option><option value="income">Доход</option></select></div><div><label>Дата</label><input name="date" type="date" required></div></div>
+        <label>Сумма</label><input name="amount" type="number" min="0.01" step="0.01" required placeholder="0.00">
+        <div class="form-row"><div><label>Валюта</label><select name="currency"><option>EUR</option><option>USD</option><option>RUB</option><option>GBP</option></select></div><div><label>Категория</label><select name="category"><option>Операционные расходы</option><option>Разработка</option><option>Маркетинг</option><option>Оборудование</option><option>Подписки и сервисы</option><option>Продажи</option><option>Инвестиции</option><option>Прочее</option></select></div></div>
+        <label>Проект</label><select name="projectId" id="financeProject"><option value="">Без проекта</option></select>
+        <label>Описание / контрагент</label><input name="description" maxlength="140" placeholder="Например, домен, хостинг, оплата клиента">
+        <button class="primary" id="financeSubmit">Добавить операцию</button>
+      </form>
+    </div>
+    <div class="panel"><h2>Финансовая сводка</h2><div id="financeSummary"></div><p class="muted">Суммы показаны отдельно по каждой валюте — конвертация между валютами не производится.</p></div>
+    <div class="panel"><div class="panel-head"><h2>Операции</h2><select id="financeFilter" style="max-width:150px"><option value="all">Все операции</option><option value="expense">Расходы</option><option value="income">Доходы</option></select></div><div id="financeList"></div></div>
+    <div class="panel"><h2>Финансы проектов</h2><div id="projectFinance"></div></div>
+  </section>
+  <div class="foot">VANTA NEXUS FORGE · MVP 0.4 · FINANCE CORE · данные хранятся локально в браузере</div>
 </main>
 <script>
-const DB='vanta-nexus-forge', STORE_P='projects', STORE_I='ideas', STORE_T='tasks';
+const DB='vanta-nexus-forge', STORE_P='projects', STORE_I='ideas', STORE_T='tasks', STORE_F='finance';
 let db, editingTaskId=null;
-function openDB(){return new Promise((resolve,reject)=>{const r=indexedDB.open(DB,2);r.onupgradeneeded=()=>{const d=r.result;if(!d.objectStoreNames.contains(STORE_P))d.createObjectStore(STORE_P,{keyPath:'id',autoIncrement:true});if(!d.objectStoreNames.contains(STORE_I))d.createObjectStore(STORE_I,{keyPath:'id',autoIncrement:true});if(!d.objectStoreNames.contains(STORE_T))d.createObjectStore(STORE_T,{keyPath:'id',autoIncrement:true})};r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error)})}
+function openDB(){return new Promise((resolve,reject)=>{const r=indexedDB.open(DB,3);r.onupgradeneeded=()=>{const d=r.result;if(!d.objectStoreNames.contains(STORE_P))d.createObjectStore(STORE_P,{keyPath:'id',autoIncrement:true});if(!d.objectStoreNames.contains(STORE_I))d.createObjectStore(STORE_I,{keyPath:'id',autoIncrement:true});if(!d.objectStoreNames.contains(STORE_T))d.createObjectStore(STORE_T,{keyPath:'id',autoIncrement:true});if(!d.objectStoreNames.contains(STORE_F))d.createObjectStore(STORE_F,{keyPath:'id',autoIncrement:true})};r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error)})}
 function all(store){return new Promise((res,rej)=>{const r=db.transaction(store).objectStore(store).getAll();r.onsuccess=()=>res(r.result.sort((a,b)=>(b.created||0)-(a.created||0)));r.onerror=()=>rej(r.error)})}
 function add(store,item){return new Promise((res,rej)=>{const r=db.transaction(store,'readwrite').objectStore(store).add({...item,created:Date.now()});r.onsuccess=res;r.onerror=()=>rej(r.error)})}
 function update(store,item){return new Promise((res,rej)=>{const r=db.transaction(store,'readwrite').objectStore(store).put(item);r.onsuccess=res;r.onerror=()=>rej(r.error)})}
@@ -92,7 +108,7 @@ function card(title,desc,meta){return `<div class="item"><strong>${safe(title)}<
 function localToday(){const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`}
 function priorityRank(p){return ({'Критический':0,'Высокий':1,'Средний':2,'Низкий':3})[p]??4}
 async function render(){
- const [ps,is,ts]=await Promise.all([all(STORE_P),all(STORE_I),all(STORE_T)]); window.__projectTasks=ts;
+ const [ps,is,ts,fs]=await Promise.all([all(STORE_P),all(STORE_I),all(STORE_T),all(STORE_F)]); window.__projectTasks=ts; window.__finance=fs;
  const q=document.querySelector('#search').value.toLowerCase();
  const fp=ps.filter(x=>(x.name+' '+x.description+' '+x.status).toLowerCase().includes(q));
  const fi=is.filter(x=>(x.title+' '+x.problem+' '+x.audience).toLowerCase().includes(q));
@@ -125,15 +141,28 @@ async function render(){
  if(sort==='priority')shown.sort((a,b)=>priorityRank(a.priority)-priorityRank(b.priority));
  if(sort==='new')shown.sort((a,b)=>(b.created||0)-(a.created||0));
  document.querySelector('#taskList').innerHTML=shown.length?shown.map(taskCard).join(''):'<div class="empty">Задач по этому фильтру нет.</div>';
+ const financeSelect=document.querySelector('#financeProject'), oldFinanceProject=financeSelect.value;
+ financeSelect.innerHTML='<option value="">Без проекта</option>'+ps.map(p=>`<option value="${p.id}">${safe(p.name)}</option>`).join('');financeSelect.value=oldFinanceProject;
+ const totals={};fs.forEach(x=>{const c=x.currency||'EUR';if(!totals[c])totals[c]={income:0,expense:0};totals[c][x.type==='income'?'income':'expense']+=Number(x.amount||0)});
+ const summaryHTML=Object.keys(totals).length?Object.entries(totals).map(([c,v])=>`<div class="item"><strong>${safe(c)}</strong><p>Доходы: ${v.income.toFixed(2)} · Расходы: ${v.expense.toFixed(2)} · Баланс: ${(v.income-v.expense).toFixed(2)}</p></div>`).join(''):'<div class="empty">Пока нет операций.</div>';
+ document.querySelector('#financeSummary').innerHTML=summaryHTML;document.querySelector('#dashFinance').innerHTML=summaryHTML;
+ const ff=document.querySelector('#financeFilter').value, financeShown=fs.filter(x=>ff==='all'||x.type===ff);
+ document.querySelector('#financeList').innerHTML=financeShown.length?financeShown.map(financeCard).join(''):'<div class="empty">Операций пока нет.</div>';
+ document.querySelector('#projectFinance').innerHTML=ps.length?ps.map(p=>{const arr=fs.filter(x=>x.projectId===p.id);const lines=arr.reduce((a,x)=>{const c=x.currency||'EUR';a[c]=a[c]||{income:0,expense:0};a[c][x.type==='income'?'income':'expense']+=Number(x.amount||0);return a},{});return `<div class="item"><strong>${safe(p.name)}</strong><p>${Object.keys(lines).length?Object.entries(lines).map(([c,v])=>`${safe(c)}: доход ${v.income.toFixed(2)} · расход ${v.expense.toFixed(2)}`).join('<br>'):'Нет финансовых операций'}</p></div>`}).join(''):'<div class="empty">Сначала создай проект.</div>';
+
+}
+function financeCard(x){
+ const project=x.projectName||'Без проекта';
+ return `<div class="item"><strong>${x.type==='income'?'Доход':'Расход'} · ${Number(x.amount).toFixed(2)} ${safe(x.currency)}</strong><p>${safe(x.category)} · ${safe(x.date||'Без даты')} · ${safe(project)}</p><p>${safe(x.description||'Без описания')}</p><div class="item-actions"><button class="secondary tiny" data-finance-edit="${x.id}">Изменить</button><button class="secondary tiny" data-finance-delete="${x.id}">Удалить</button></div></div>`;
 }
 function projectCard(p){
  const related=window.__projectTasks?.filter(t=>t.projectId===p.id)||[];
  const done=related.filter(t=>t.status==='Выполнена').length;
  const pct=related.length?Math.round(done/related.length*100):0;
- const budget=Number(p.budget||0);
+ const budget=Number(p.budget||0); const spends=(window.__finance||[]).filter(x=>x.projectId===p.id&&x.type==='expense').reduce((a,x)=>{a[x.currency]=(a[x.currency]||0)+Number(x.amount||0);return a},{}); const spendText=Object.entries(spends).map(([c,v])=>v.toFixed(2)+' '+c).join(' · ');
  const milestones=(p.milestones||'').split('\n').map(x=>x.trim()).filter(Boolean);
  return `<div class="item"><strong>${safe(p.name)}</strong><p>${safe(p.description||'Без описания')}</p>
- <div class="project-kpis"><span class="tag">${safe(p.status||'Активный')}</span>${p.dueDate?`<span class="tag">Дедлайн: ${safe(p.dueDate)}</span>`:''}<span class="tag">${related.length} задач · ${done} выполнено</span>${budget?`<span class="tag">Бюджет: ${safe(budget)} ${safe(p.currency||'EUR')}</span>`:''}</div>
+ <div class="project-kpis"><span class="tag">${safe(p.status||'Активный')}</span>${p.dueDate?`<span class="tag">Дедлайн: ${safe(p.dueDate)}</span>`:''}<span class="tag">${related.length} задач · ${done} выполнено</span>${budget?`<span class="tag">Бюджет: ${safe(budget)} ${safe(p.currency||'EUR')}</span>`:''}${spendText?`<span class="tag">Расходы: ${safe(spendText)}</span>`:''}</div>
  <div class="progress"><span style="width:${pct}%"></span></div><p>${pct}% прогресс по связанным задачам</p>
  ${milestones.length?`<div class="milestones"><b>Контрольные точки:</b>\n${milestones.map((m,i)=>`${i+1}. ${safe(m)}`).join('\n')}</div>`:''}
  <div class="item-actions"><button class="secondary tiny" data-project-edit="${p.id}">Изменить</button><button class="secondary tiny" data-project-archive="${p.id}">${p.status==='Архив'?'Вернуть из архива':'В архив'}</button></div></div>`;
@@ -181,5 +210,21 @@ document.querySelector('#taskList').addEventListener('click',async e=>{
  if(toggle){const id=Number(toggle.dataset.toggle),t=(await all(STORE_T)).find(x=>x.id===id);if(t){t.status=t.status==='Выполнена'?'К выполнению':'Выполнена';await update(STORE_T,t);await render()}}
  if(del){if(confirm('Удалить эту задачу?')){await remove(STORE_T,del.dataset.delete);if(editingTaskId===Number(del.dataset.delete))resetTaskForm();await render()}}
 });
-(async()=>{try{db=await openDB();await render();if('serviceWorker'in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('./sw.js')}catch(e){alert('Не удалось открыть локальную базу данных. Проверьте поддержку IndexedDB в браузере.')}})();
+let editingFinanceId=null;
+function resetFinanceForm(){editingFinanceId=null;const f=document.querySelector('#financeForm');f.reset();f.elements.date.value=localToday();document.querySelector('#financeFormTitle').textContent='Новая операция';document.querySelector('#financeSubmit').textContent='Добавить операцию';document.querySelector('#cancelFinanceEdit').classList.add('hidden')}
+document.querySelector('#financeForm').onsubmit=async e=>{
+ e.preventDefault();const f=new FormData(e.target), projectId=f.get('projectId'),projects=await all(STORE_P),project=projects.find(p=>String(p.id)===String(projectId));
+ const item={type:f.get('type'),date:f.get('date'),amount:Number(f.get('amount')),currency:f.get('currency'),category:f.get('category'),projectId:projectId?Number(projectId):null,projectName:project?project.name:'',description:f.get('description').trim()};
+ if(!Number.isFinite(item.amount)||item.amount<=0)return alert('Укажи сумму больше нуля.');
+ if(editingFinanceId!==null){const old=(await all(STORE_F)).find(x=>x.id===editingFinanceId);await update(STORE_F,{...old,...item,id:editingFinanceId})}else await add(STORE_F,item);
+ resetFinanceForm();await render();
+};
+document.querySelector('#cancelFinanceEdit').onclick=resetFinanceForm;
+document.querySelector('#financeFilter').onchange=render;
+document.querySelector('#financeList').addEventListener('click',async e=>{
+ const edit=e.target.closest('[data-finance-edit]'),del=e.target.closest('[data-finance-delete]');
+ if(edit){const x=(await all(STORE_F)).find(y=>y.id===Number(edit.dataset.financeEdit));if(!x)return;editingFinanceId=x.id;const f=document.querySelector('#financeForm');for(const k of ['type','date','amount','currency','category','projectId','description'])f.elements[k].value=x[k]??'';document.querySelector('#financeFormTitle').textContent='Редактирование операции';document.querySelector('#financeSubmit').textContent='Сохранить изменения';document.querySelector('#cancelFinanceEdit').classList.remove('hidden');window.scrollTo({top:0,behavior:'smooth'})}
+ if(del&&confirm('Удалить финансовую операцию?')){await remove(STORE_F,del.dataset.financeDelete);if(editingFinanceId===Number(del.dataset.financeDelete))resetFinanceForm();await render()}
+});
+(async()=>{try{db=await openDB();document.querySelector('#financeForm').elements.date.value=localToday();await render();if('serviceWorker'in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('./sw.js')}catch(e){alert('Не удалось открыть локальную базу данных. Проверьте поддержку IndexedDB в браузере.')}})();
 </script></body></html>
