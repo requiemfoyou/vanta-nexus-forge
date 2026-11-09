@@ -227,4 +227,144 @@ document.querySelector('#financeList').addEventListener('click',async e=>{
  if(del&&confirm('Удалить финансовую операцию?')){await remove(STORE_F,del.dataset.financeDelete);if(editingFinanceId===Number(del.dataset.financeDelete))resetFinanceForm();await render()}
 });
 (async()=>{try{db=await openDB();document.querySelector('#financeForm').elements.date.value=localToday();await render();if('serviceWorker'in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('./sw.js')}catch(e){alert('Не удалось открыть локальную базу данных. Проверьте поддержку IndexedDB в браузере.')}})();
-</script></body></html>
+</script>
+
+<script>
+(() => {
+  const stores = [STORE_P, STORE_I, STORE_T, STORE_F];
+
+  const panel = document.createElement('section');
+  panel.id = 'vantaBackupPanel';
+  panel.innerHTML = `
+    <style>
+      #vantaBackupPanel {
+        position:fixed; right:12px; bottom:16px; z-index:99999;
+        background:#172b42; color:white; padding:14px;
+        border-radius:14px; box-shadow:0 4px 20px #0008;
+        font:14px sans-serif; max-width:280px;
+      }
+      #vantaBackupPanel button {
+        display:block; width:100%; margin-top:9px;
+        padding:12px; border:0; border-radius:9px;
+        background:#398bd0; color:white; font-weight:bold;
+      }
+      #vantaBackupPanel .close {background:#526477}
+    </style>
+    <strong>BACKUP & RECOVERY</strong>
+    <button id="vantaExport">Создать резервную копию</button>
+    <button id="vantaImport">Восстановить из файла</button>
+    <button id="vantaClose" class="close">Закрыть</button>
+    <input id="vantaBackupFile" type="file"
+      accept=".json,application/json" hidden>
+  `;
+  document.body.append(panel);
+
+  panel.querySelector('#vantaClose').onclick =
+    () => panel.remove();
+
+  panel.querySelector('#vantaExport').onclick = async () => {
+    try {
+      if (!db) throw new Error('База ещё не открыта');
+
+      const backup = {
+        format: 'VANTA_NEXUS_FORGE_BACKUP',
+        schema: 1,
+        database: DB,
+        createdAt: new Date().toISOString(),
+        stores: {}
+      };
+
+      for (const store of stores) {
+        backup.stores[store] = await all(store);
+      }
+
+      const blob = new Blob(
+        [JSON.stringify(backup, null, 2)],
+        {type: 'application/json'}
+      );
+
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download =
+        'VANTA-NEXUS-BACKUP-' +
+        new Date().toISOString().slice(0,10) + '.json';
+
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 3000);
+
+      alert('Резервная копия подготовлена.');
+    } catch (error) {
+      alert('Ошибка экспорта: ' + error.message);
+    }
+  };
+
+  const fileInput = panel.querySelector('#vantaBackupFile');
+
+  panel.querySelector('#vantaImport').onclick =
+    () => fileInput.click();
+
+  fileInput.onchange = async () => {
+    const file = fileInput.files[0];
+    if (!file) return;
+
+    try {
+      const backup = JSON.parse(await file.text());
+
+      if (
+        backup.format !== 'VANTA_NEXUS_FORGE_BACKUP' ||
+        backup.schema !== 1 ||
+        backup.database !== DB ||
+        !backup.stores
+      ) {
+        throw new Error('Неверный формат резервной копии');
+      }
+
+      for (const store of stores) {
+        const rows = backup.stores[store];
+        if (!Array.isArray(rows)) {
+          throw new Error('Нет данных хранилища: ' + store);
+        }
+        for (const row of rows) {
+          if (!row || !Number.isSafeInteger(row.id)) {
+            throw new Error('Повреждена запись в ' + store);
+          }
+        }
+      }
+
+      if (!confirm(
+        'Восстановить данные из файла?\n\n' +
+        'Текущие проекты, идеи, задачи и финансы ' +
+        'будут заменены содержимым резервной копии.'
+      )) return;
+
+      await new Promise((resolve, reject) => {
+        const tx = db.transaction(stores, 'readwrite');
+
+        tx.oncomplete = resolve;
+        tx.onerror = () => reject(tx.error);
+        tx.onabort = () => reject(tx.error);
+
+        for (const store of stores) {
+          const objectStore = tx.objectStore(store);
+          objectStore.clear();
+
+          for (const row of backup.stores[store]) {
+            objectStore.put(row);
+          }
+        }
+      });
+
+      await render();
+      alert('Восстановление завершено.');
+    } catch (error) {
+      alert('Восстановление не выполнено: ' + error.message);
+    } finally {
+      fileInput.value = '';
+    }
+  };
+})();
+</script>
+</body></html>.
