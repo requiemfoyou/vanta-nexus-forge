@@ -252,10 +252,13 @@ document.querySelector('#financeList').addEventListener('click',async e=>{
     </style>
     <strong>BACKUP & RECOVERY</strong>
     <button id="vantaExport">Создать резервную копию</button>
-    <button id="vantaImport">Восстановить из файла</button>
-    <button id="vantaClose" class="close">Закрыть</button>
-    <input id="vantaBackupFile" type="file"
-      accept=".json,application/json" hidden>
+ <button id="vantaImport">Восстановить из файла</button>
+<button id="vantaValidate">Проверить резервную копию</button>
+<button id="vantaClose" class="close">Закрыть</button>
+<input id="vantaBackupFile" type="file"
+  accept=".json,application/json" hidden>
+<input id="vantaValidateFile" type="file"
+  accept=".json,application/json" hidden>
   `;
   document.body.append(panel);
 
@@ -301,7 +304,82 @@ document.querySelector('#financeList').addEventListener('click',async e=>{
     }
   };
 
-  const fileInput = panel.querySelector('#vantaBackupFile');
+  const fileInput = panel.querySelector('#vantaBackupFile');  const validateInput =
+    panel.querySelector('#vantaValidateFile');
+
+  panel.querySelector('#vantaValidate').onclick =
+    () => validateInput.click();
+
+  validateInput.onchange = async () => {
+    const file = validateInput.files[0];
+    if (!file) return;
+
+    try {
+      const backup = JSON.parse(await file.text());
+
+      if (
+        backup.format !== 'VANTA_NEXUS_FORGE_BACKUP' ||
+        backup.schema !== 1 ||
+        backup.database !== DB ||
+        !backup.stores
+      ) {
+        throw new Error('Неверный формат резервной копии');
+      }
+
+      const checks = [
+        [STORE_P, 'name'],
+        [STORE_I, 'title'],
+        [STORE_T, 'title'],
+        [STORE_F, 'type']
+      ];
+
+      const counts = [];
+
+      for (const [store, field] of checks) {
+        const rows = backup.stores[store];
+
+        if (!Array.isArray(rows)) {
+          throw new Error('Нет раздела ' + store);
+        }
+
+        for (const row of rows) {
+          if (
+            !row ||
+            !Number.isSafeInteger(row.id) ||
+            typeof row[field] !== 'string' ||
+            !row[field].trim()
+          ) {
+            throw new Error(
+              'Некорректная запись в разделе ' + store
+            );
+          }
+
+          if (
+            store === STORE_F &&
+            (!Number.isFinite(Number(row.amount)) ||
+             Number(row.amount) <= 0 ||
+             !row.date ||
+             !row.currency)
+          ) {
+            throw new Error('Некорректная финансовая операция');
+          }
+        }
+
+        counts.push(store + ': ' + rows.length);
+      }
+
+      alert(
+        'ПРОВЕРКА УСПЕШНА!\n\n' +
+        counts.join('\n') +
+        '\n\nТекущая база данных не изменялась.'
+      );
+
+    } catch (error) {
+      alert('Проверка не пройдена: ' + error.message);
+    } finally {
+      validateInput.value = '';
+    }
+  };
 
   panel.querySelector('#vantaImport').onclick =
     () => fileInput.click();
